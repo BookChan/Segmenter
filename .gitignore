@@ -1,0 +1,4 @@
+*.txt
+.settings
+*/bin/*
+.project
