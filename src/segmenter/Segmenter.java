@@ -65,7 +65,7 @@ public class Segmenter {
 			
 			while (this.corpus.hasNext()) {
 				String sequence = this.corpus.nextString();
-				List<String> list = evaluate(sequence, true);
+				List<String> list = evaluate(sequence, false);
 				
 				for (String seg : list) {
 					Integer f = newF.get(seg);
@@ -103,6 +103,16 @@ public class Segmenter {
 		int[][] path = new int[L][this.MAX_LENGTH];
 		
 		for (int i = 0; i < L; i++) {
+			// scale first
+			double maxScale = 0.0;
+			for (int k = 0; k < i && k < this.MAX_LENGTH; k++) {
+				maxScale = maxScale <= beta[i - k - 1][k] ? maxScale : beta[i - k - 1][k];
+			}
+			
+			for (int k = 0; k < i && k < this.MAX_LENGTH; k++) {
+				maxScale = maxScale <= beta[i - k - 1][k] ? maxScale : beta[i - k - 1][k];
+			}
+			
 			for (int j = 0; j < this.MAX_LENGTH && j < L - i; j++) {
 				if (i == 0) {
 					beta[i][j] = PV(sequence.substring(i, i + j + 1));
@@ -128,7 +138,8 @@ public class Segmenter {
 						}
 					}
 					
-					beta[i][j] = max * PV(sequence.substring(i, i + j + 1));
+					//!!
+					beta[i][j] = max + PV(sequence.substring(i, i + j + 1));
 					path[i][j] = maxIndex;
 				}
 			}
@@ -159,22 +170,31 @@ public class Segmenter {
 		}
 		queue.addFirst(sequence.substring(nextI, previousI));
 		
+		
+		// 测试用，输出概率数组
 		if (explain) {
-			// 将概率数组打印出来
+			LinkedList<String> explainQueue = new LinkedList<String>();
 			DecimalFormat df=new DecimalFormat();
 			df.applyPattern("0.00");
 			
-			for (int i = 0; i < beta.length; i++) {
-				System.out.print(sequence.substring(i, i + 1) + "\t");
+			nextI = L - maxIndex - 1;
+			nextJ = maxIndex;
+			previousI = L;
+			
+			while (nextI > 0) {
+				explainQueue.addFirst(sequence.substring(nextI, previousI) +
+						" : " +df.format(
+						(beta[nextI][nextJ] / beta[nextI - path[nextI][nextJ] - 1][path[nextI][nextJ]])));
+				
+				previousI = nextI;
+				nextI = nextI - path[nextI][nextJ] - 1;
+				nextJ = path[nextI][nextJ];
+			}
+			
+			for (String line : explainQueue) {
+				System.out.println(line);
 			}
 			System.out.println();
-			
-			for (int j = 0; j < beta[0].length; j++) {
-				for (int i = 0; i < beta.length; i++) {
-					System.out.print(df.format(beta[i][j]) + "\t");
-				}
-				System.out.println();
-			}
 		}
 		
 		
