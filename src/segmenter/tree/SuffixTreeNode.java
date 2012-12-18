@@ -12,6 +12,9 @@ public class SuffixTreeNode {
 	
 	public int sum;
 	
+	// entorpy
+	public double entorpy = 0.0;
+	
 	public SuffixTreeNode(String word, SuffixTreeNode parent) {
 		this.word = word;
 		this.parent = parent;

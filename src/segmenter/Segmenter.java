@@ -44,24 +44,40 @@ public class Segmenter {
 	}
 	
 	public void preProcess() {
-		System.out.println("预处理...");
+		System.out.println("Preprocessing...");
+		
+		//!! 统计字符数与前缀节点数的关系
+		long sum = 0;
+		int temp = 0;
+		
 		while (this.corpus.hasNext()) {
 			String sequence = this.corpus.nextString();
 			
 			prefixTree.compile(sequence);
 			suffixTree.compile(sequence);
+			
+			//!!
+			sum += sequence.length();
+			temp += sequence.length();
+			if (temp >= 10000) {
+				temp -= 10000;
+				System.out.println(sum + "\t" + PrefixTreeNode.sss);
+			}
 		}
 		this.corpus.reset();
 		
-		System.out.println("入树结束,遍历...");
+		System.out.println("Creating tree: done!");
 		update();
 	}
 	
 	public void train(int ITER) {
 		for (int iter = 1; iter <= ITER; iter++) {
-			System.out.println("第" + iter + "次迭代...");
+			System.out.println("in " + iter + "th iter...");
 			
 			HashMap<String, Integer> newF = new HashMap<String, Integer>();
+			
+			//!!
+			System.out.println("0%");
 			
 			while (this.corpus.hasNext()) {
 				String sequence = this.corpus.nextString();
@@ -76,6 +92,9 @@ public class Segmenter {
 					
 					newF.put(seg, f + 1);
 				}
+				
+				//!!
+				System.out.println("\b" + corpus.seek * 100 / corpus.size + "%");
 			}
 			this.corpus.reset();
 			
@@ -96,6 +115,9 @@ public class Segmenter {
 	public List<String> evaluate(String sequence, boolean explain) {
 		int L = sequence.length();
 		
+		//!!
+		System.out.println("Line size: " + L);
+		
 		// 构建后退数组
 		// 时间复杂度:O(L * MAX_LENGTH * MAX_LENGTH)
 		//!! 可改进的地方:L的大小!!
@@ -106,11 +128,11 @@ public class Segmenter {
 			// scale first
 			double maxScale = 0.0;
 			for (int k = 0; k < i && k < this.MAX_LENGTH; k++) {
-				maxScale = maxScale <= beta[i - k - 1][k] ? maxScale : beta[i - k - 1][k];
+				maxScale = maxScale >= beta[i - k - 1][k] ? maxScale : beta[i - k - 1][k];
 			}
 			
 			for (int k = 0; k < i && k < this.MAX_LENGTH; k++) {
-				maxScale = maxScale <= beta[i - k - 1][k] ? maxScale : beta[i - k - 1][k];
+				beta[i - k - 1][k] /= maxScale;
 			}
 			
 			for (int j = 0; j < this.MAX_LENGTH && j < L - i; j++) {
@@ -149,7 +171,7 @@ public class Segmenter {
 		double maxValue = 0.0;
 		int maxIndex = 0;
 		
-		for (int i = 0; i < this.MAX_LENGTH; i++) {
+		for (int i = 0; i < this.MAX_LENGTH && i < L; i++) {
 			if (maxValue < beta[L - i - 1][i]) {
 				maxValue = beta[L - i - 1][i];
 				maxIndex = i;
@@ -201,7 +223,8 @@ public class Segmenter {
 		return queue;
 	}
 	
-	// update
+	// update the value of FM,HLM,HRM 
+	//   without changing data of treeNode
 	public void update() {
 		visitPrefix(this.prefixTree.root, "", 0);
 		visitSuffix(this.suffixTree.root, 0);
@@ -306,7 +329,7 @@ public class Segmenter {
 		
 //		System.out.println(hsr + " " + HRM[Ll - 1]);
 		
-		return Math.pow(hsr * hsl / HRM[Ll - 1] / HLM[Lr - 1] + 0.0000000001 , 1.0 / (Ll + Lr));
+		return Math.pow(hsr * hsl / HRM[Ll - 1] / HLM[Lr - 1] + 0.0000000001 , 1.0);
 	}
 	
 	private double HSR(String left) {
@@ -316,16 +339,19 @@ public class Segmenter {
 			return 0;
 		}
 		
-		double entorpy = 0;
-		
-		for (String key : node.children.keySet()) {
-			PrefixTreeNode child = node.children.get(key);
+		if (node.entorpy == 0.0) {
+			double entorpy = 0;
+			for (String key : node.children.keySet()) {
+				PrefixTreeNode child = node.children.get(key);
+				
+				double p = 1.0 * child.count / node.sum;
+				entorpy -= p * Math.log(p);
+			}
 			
-			double p = 1.0 * child.count / node.sum;
-			entorpy -= p * Math.log(p);
+			node.entorpy = entorpy;
 		}
 		
-		return entorpy;
+		return node.entorpy;
 	}
 	
 	private double HSL(String right) {
@@ -335,15 +361,17 @@ public class Segmenter {
 			return 0;
 		}
 		
-		double entorpy = 0;
-		
-		for (String key : node.children.keySet()) {
-			SuffixTreeNode child = node.children.get(key);
-			
-			double p = 1.0 * child.count / node.sum;
-			entorpy -= p * Math.log(p);
+		if (node.entorpy == 0.0) {
+			double entorpy = 0;
+			for (String key : node.children.keySet()) {
+				SuffixTreeNode child = node.children.get(key);
+				
+				double p = 1.0 * child.count / node.sum;
+				entorpy -= p * Math.log(p);
+			}
+			node.entorpy = entorpy;
 		}
 		
-		return entorpy;
+		return node.entorpy;
 	}
 }

@@ -8,7 +8,7 @@ public class PrefixTree {
 	
 	public PrefixTree(int depth) {
 		this.MAX_DEPTH = depth;
-		this.root = new PrefixTreeNode("ROOT", null);
+		this.root = new PrefixTreeNode("ROOT", null, 0);
 	}
 	
 	public void compile(String sequence) {

@@ -16,6 +16,7 @@ public class Corpus {
 			"从经济层面来看，深刻的变动表现在：一是世界经济在经历国际金融危机后恢复好于预期，但由于主要发达国家的房地产和金融业等支柱产业受到重创，发达国家特别是美国的家庭负债率和失业率居高不下，国际市场需求受到抑制，增长放缓；二是发达国家过度依赖虚拟经济的增长方式难以为继，中东等国提供能源资源、中国等亚洲国家生产、美欧消费的世界经济循环和增长格局面临大调整；三是一些国家为刺激本国经济复苏，持续实施扩张性货币政策，可能会引起国际金融市场更大的动荡，对新兴经济体也会产生很大的冲击；四是世界科技创新孕育新突破，产业升级步伐加快；五是全球博弈更趋复杂，我国面临的外部压力有所加大。"};
 	
 	public int seek = 0;
+	public int size = 1000;
 	
 	public Scanner scanner;
 	
@@ -28,15 +29,17 @@ public class Corpus {
 	}
 	
 	public String nextString() {
+		seek++;
 		return scanner.nextLine();
 	}
 	
 	public boolean hasNext() {
-		return scanner.hasNextLine();
+		return scanner.hasNextLine() && seek <= size;
 	}
 	
 	public void reset() {
 		scanner.close();
+		seek = 0;
 		try {
 			scanner = new Scanner(new File("corpus.txt"));
 		} catch (Exception e) {
@@ -45,7 +48,7 @@ public class Corpus {
 	}
 	
 	public static void main(String[] args) {
-		File dir = new File("F:\\q情感评测语料\\COAE2011\\COAE2011_Corpus_All_Text\\digital");
+		File dir = new File("e:\\q情感评测语料\\COAE2011\\COAE2011_Corpus_All_Text\\digital");
 		
 		try {
 			BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("./corpus.txt")));
